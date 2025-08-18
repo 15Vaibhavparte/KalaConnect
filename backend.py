@@ -16,15 +16,21 @@ vertexai.init(project=PROJECT_ID, location=LOCATION)
 # Initialize the Translation client
 translate_client = translate.Client()
 
-# --- New Translation Function ---
+# --- Updated Translation Function for v3 ---
 def translate_text(text: str, target_language: str) -> str:
-    """Translates text into the target language."""
+    """Translates text into the target language using v3 client."""
     if not text:
         return ""
     
-    # The translation API returns a dictionary, we need the 'translatedText' value
-    result = translate_client.translate(text, target_language=target_language)
-    return result["translatedText"]
+    parent = f"projects/{PROJECT_ID}/locations/global"
+    
+    response = translate_client.translate_text(
+        parent=parent,
+        contents=[text],
+        target_language_code=target_language,
+    )
+    # The v3 response is an object with a list of translations
+    return response.translations[0].translated_text
 
 # --- Updated AI Generation Functions ---
 def generate_product_description(product_input: str, target_language: str = "en"):
@@ -34,8 +40,8 @@ def generate_product_description(product_input: str, target_language: str = "en"
     # Step 1: Translate the user's input to English for the best AI performance
     input_in_english = translate_text(product_input, "en")
 
-    # Load the Gemini 1.5 Flash model (updated model name)
-    model = GenerativeModel("gemini-1.5-flash-latest")
+    # Load the Gemini 2.0 Flash model (updated model name)
+    model = GenerativeModel("gemini-2.0-flash")
 
     prompt = f"""
     You are a marketing expert specializing in helping local Indian artisans.

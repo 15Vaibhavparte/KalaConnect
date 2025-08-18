@@ -5,7 +5,7 @@ from backend import generate_product_description, generate_social_media_post
 st.set_page_config(
     page_title="KalaConnect AI Assistant",
     page_icon="🎨",
-    layout="wide" # Use a wide layout to better accommodate the tabs
+    layout="wide"
 )
 
 # --- Application UI ---
@@ -17,6 +17,21 @@ st.image(
     caption="Empowering India's Artisans with the Power of AI",
     use_column_width=True
 )
+
+# --- New Language Selector ---
+# A dictionary of supported languages and their ISO 639-1 codes
+LANGUAGES = {
+    "English": "en",
+    "हिन्दी (Hindi)": "hi",
+    "বাংলা (Bengali)": "bn",
+    "தமிழ் (Tamil)": "ta",
+    "తెలుగు (Telugu)": "te",
+    "मराठी (Marathi)": "mr"
+}
+
+# Add a selectbox to the sidebar for language selection
+selected_language_name = st.sidebar.selectbox("Choose your language:", list(LANGUAGES.keys()))
+selected_language_code = LANGUAGES[selected_language_name]
 
 # Welcome text below the banner image
 st.write("Welcome, creative soul! Describe your craft, and I'll help you write a beautiful story for it.")
@@ -33,14 +48,14 @@ with tab1:
     st.write("This tool will help you write a warm and evocative description for your product page or marketplace listing.")
     
     with st.form("product_form"):
-        # We add a 'key' to differentiate this text area from the one in the other tab
         product_input_desc = st.text_area("Enter product details:", height=150, key="desc")
         submitted_desc = st.form_submit_button("✨ Generate Description")
 
     if submitted_desc:
         if product_input_desc:
-            with st.spinner("Crafting the perfect description..."):
-                generated_description = generate_product_description(product_input_desc)
+            with st.spinner(f"Crafting the perfect description in {selected_language_name}..."):
+                # Pass the selected language code to the backend function
+                generated_description = generate_product_description(product_input_desc, selected_language_code)
                 st.subheader("Your AI-Generated Product Description:")
                 st.markdown(f"> {generated_description.strip()}")
         else:
@@ -53,16 +68,15 @@ with tab2:
     st.write("This tool will generate 3 different Instagram post ideas for your product, complete with captions and hashtags.")
 
     with st.form("social_form"):
-        # This text area has a different key: 'social'
         product_input_social = st.text_area("Enter product details:", height=150, key="social")
         submitted_social = st.form_submit_button("🚀 Generate Posts")
 
     if submitted_social:
         if product_input_social:
-            with st.spinner("Brainstorming some creative posts..."):
-                generated_posts = generate_social_media_post(product_input_social)
+            with st.spinner(f"Brainstorming creative posts in {selected_language_name}..."):
+                # Pass the selected language code to the backend function
+                generated_posts = generate_social_media_post(product_input_social, selected_language_code)
                 st.subheader("Your AI-Generated Social Media Ideas:")
-                # Display the markdown-formatted text directly
                 st.markdown(generated_posts) 
         else:
             st.error("Please enter some details about your product first.")

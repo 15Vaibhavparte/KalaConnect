@@ -2,86 +2,107 @@ import os
 from dotenv import load_dotenv
 import vertexai
 from vertexai.generative_models import GenerativeModel
+from google.cloud import translate_v2 as translate # Import the Translation library
 
 # Load environment variables from .env file
 load_dotenv()
 
-# --- Step 1: Initialize Vertex AI ---
-# Get your project ID from the Google Cloud Console
+# --- GCP Project Configuration ---
 PROJECT_ID = "kalaconnect-hackathon" # Replace with your actual project ID
-LOCATION = "us-central1" # e.g., us-central1
+LOCATION = "us-central1"
 
 # Initialize the Vertex AI SDK
 vertexai.init(project=PROJECT_ID, location=LOCATION)
+# Initialize the Translation client
+translate_client = translate.Client()
 
-# --- Step 2: Create the AI Model Function ---
-def generate_product_description(product_input):
-    """
-    This function takes an artisan's product description and generates a marketing-focused one.
-    """
-    # Load the Gemini 2.0 Flash model
-    model = GenerativeModel("gemini-2.0-flash")
+# --- New Translation Function ---
+def translate_text(text: str, target_language: str) -> str:
+    """Translates text into the target language."""
+    if not text:
+        return ""
+    
+    # The translation API returns a dictionary, we need the 'translatedText' value
+    result = translate_client.translate(text, target_language=target_language)
+    return result["translatedText"]
 
-    # --- Step 3: Engineer the Prompt ---
-    # This is where you guide the AI. A good prompt is crucial!
+# --- Updated AI Generation Functions ---
+def generate_product_description(product_input: str, target_language: str = "en"):
+    """
+    Generates a marketing-focused product description in the target language.
+    """
+    # Step 1: Translate the user's input to English for the best AI performance
+    input_in_english = translate_text(product_input, "en")
+
+    # Load the Gemini 1.5 Flash model (updated model name)
+    model = GenerativeModel("gemini-1.5-flash-latest")
+
     prompt = f"""
     You are a marketing expert specializing in helping local Indian artisans.
     Your tone is warm, evocative, and appreciative of traditional craftsmanship.
     An artisan has provided the following details about their product.
-    Artisan's input: "{product_input}"
+    Artisan's input: "{input_in_english}"
 
     Based on this, write a compelling and beautiful product description (around 100-150 words)
-    that they can use on an e-commerce website. Highlight the handmade nature,
-    the potential story behind the craft, and the materials used. Do not use generic phrases.
-    Make it sound authentic and personal.
+    in English that they can use on an e-commerce website.
     """
 
-    # --- Step 4: Generate the Content ---
     try:
+        # Step 2: Generate the content in English
         response = model.generate_content(prompt)
-        return response.text
-    # New, user-friendly error
+        english_description = response.text
+
+        # Step 3: Translate the English output back to the user's target language
+        if target_language != "en":
+            translated_description = translate_text(english_description, target_language)
+            return translated_description
+        else:
+            return english_description
+
     except Exception as e:
-        print(f"An error occurred: {e}") # You can still see the technical error in your terminal
+        print(f"An error occurred: {e}")
+        return "Sorry, I'm having a little trouble connecting to the creative cloud right now. Please try again in a moment."
+
+
+def generate_social_media_post(product_input: str, target_language: str = "en"):
+    """
+    Generates 3 engaging Instagram post ideas in the target language.
+    """
+    # Step 1: Translate input to English
+    input_in_english = translate_text(product_input, "en")
+
+    model = GenerativeModel("gemini-2.0-flash")
+
+    prompt = f"""
+    You are a creative social media manager for Indian handicraft brands.
+    Your goal is to create engaging, short-form content for Instagram in English.
+    An artisan has provided the following details about their product: "{input_in_english}"
+
+    Based on this, generate 3 distinct Instagram post ideas in English.
+    Each post idea must include a caption and relevant hashtags.
+    Format the output clearly using markdown.
+    """
+    try:
+        # Step 2: Generate content in English
+        response = model.generate_content(prompt)
+        english_posts = response.text
+
+        # Step 3: Translate the English output back to the target language
+        if target_language != "en":
+            translated_posts = translate_text(english_posts, target_language)
+            return translated_posts
+        else:
+            return english_posts
+            
+    except Exception as e:
+        print(f"An error occurred: {e}")
         return "Sorry, I'm having a little trouble connecting to the creative cloud right now. Please try again in a moment."
 
 # --- For Testing ---
 if __name__ == '__main__':
-    # This block runs only when you execute backend.py directly
-    test_input = "A handmade blue pottery mug from Jaipur. It is painted with a floral design. It is microwave safe."
-    description = generate_product_description(test_input)
+    # Test the functions
+    test_input = "Blue pottery mug from Jaipur with floral designs"
     print("--- Generated Description ---")
-    print(description)
-
-# This function uses Google Vertex AI's Gemini 2.0 Flash model to generate three Instagram post ideas for a given artisan product description.
-# It crafts a detailed prompt instructing the AI to create engaging captions and relevant hashtags, formatted in markdown for clarity.
-# The function handles errors gracefully and returns either the AI's response or an error message.
-def generate_social_media_post(product_input):
-    """
-    Generates 3 engaging Instagram post ideas for a product.
-    """
-    # Load the Gemini 2.0 Flash model
-    model = GenerativeModel("gemini-2.0-flash")
-
-    # Engineer a new prompt specifically for social media
-    prompt = f"""
-    You are a creative social media manager for Indian handicraft brands.
-    Your goal is to create engaging, short-form content for Instagram to drive sales and tell a story.
-    An artisan has provided the following details about their product: "{product_input}"
-
-    Based on this, generate 3 distinct Instagram post ideas.
-    Each post idea must include:
-    1. A captivating caption (around 30-50 words) that tells a small story or asks a question.
-    2. A list of 5-7 relevant and popular hashtags (including #indianhandicraft, #handmade, #localartisan, #shopsmall, and others specific to the craft).
-
-    Format the output clearly using markdown, with a heading for each post idea.
-    For example:
-    **Post Idea 1: The Making Of**
-    *Caption:* ...
-    *Hashtags:* ...
-    """
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        return f"An error occurred: {e}"
+    print(generate_product_description(test_input))
+    print("\n--- Generated Social Media Posts ---")
+    print(generate_social_media_post(test_input))

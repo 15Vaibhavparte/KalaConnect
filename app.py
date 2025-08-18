@@ -1,5 +1,4 @@
 import streamlit as st
-# Step 1: Import both of our AI functions now
 from backend import generate_product_description, generate_social_media_post
 
 # --- Page Configuration ---
@@ -12,21 +11,19 @@ st.set_page_config(
 # --- Application UI ---
 st.title("🎨 KalaConnect - The Artisan's Digital Storyteller")
 
-# Right after st.title(...)
-col1, col2 = st.columns([1, 2])
+# Banner image below the title
+st.image(
+    "img/artisan.png",
+    caption="Empowering India's Artisans with the Power of AI",
+    use_column_width=True
+)
 
-with col1:
-    # Display all 4 images in a carousel or grid
-    st.image(["img/1.jpg", "img/2.jpg", "img/3.jpg", "img/4.jpg"], 
-             caption=["Artistry in every detail", "Handcrafted with love", "Traditional craftsmanship", "Cultural heritage"], 
-             width=150)
-
-with col2:
-    st.write("Welcome, creative soul! Describe your craft, and I'll help you write a beautiful story for it.")
-    st.write("Your creative partner for marketing your beautiful crafts.")
+# Welcome text below the banner image
+st.write("Welcome, creative soul! Describe your craft, and I'll help you write a beautiful story for it.")
+st.write("Your creative partner for marketing your beautiful crafts.")
 st.write("---")
 
-# --- Step 2: Create Tabs for Different Features ---
+# --- Create Tabs for Different Features ---
 tab1, tab2 = st.tabs(["**✍️ Product Description Generator**", "**📱 Social Media Post Generator**"])
 
 # --- Content for the First Tab (Product Description) ---
@@ -49,7 +46,7 @@ with tab1:
         else:
             st.error("Please enter some details about your product first.")
 
-# --- Step 3: Content for the Second Tab (Social Media) ---
+# --- Content for the Second Tab (Social Media) ---
 with tab2:
     st.header("Create Engaging Social Media Posts")
     st.info("💡 **Pro-Tip:** Mention what makes your product special. The AI will generate captions and hashtags to match your tone.")

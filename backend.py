@@ -2,12 +2,30 @@ import os
 from dotenv import load_dotenv
 import vertexai
 from vertexai.generative_models import GenerativeModel
+import streamlit as st
+
 # Load environment variables from .env file
 load_dotenv()
-# Set credentials from .env file
-credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-if credentials_path:
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
+
+# For Streamlit Cloud
+if hasattr(st, 'secrets'):
+    PROJECT_ID = st.secrets["gcp"]["PROJECT_ID"]
+    LOCATION = st.secrets["gcp"]["LOCATION"]
+    
+    # Set up credentials from secrets
+    import json
+    import tempfile
+    
+    if "GOOGLE_APPLICATION_CREDENTIALS_JSON" in st.secrets["gcp"]:
+        service_account_info = json.loads(st.secrets["gcp"]["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
+            json.dump(service_account_info, f)
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f.name
+else:
+    # Set credentials from .env file
+    credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+    if credentials_path:
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
 
 try:
     from google.cloud import translate_v2 as translate

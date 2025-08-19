@@ -2,7 +2,16 @@ import os
 from dotenv import load_dotenv
 import vertexai
 from vertexai.generative_models import GenerativeModel
-from google.cloud import translate_v2 as translate # Import the Translation library
+# Set credentials from .env file
+credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+if credentials_path:
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
+
+try:
+    from google.cloud import translate_v2 as translate
+except ImportError:
+    # Alternative import method
+    from google.cloud import translate
 
 # Load environment variables from .env file
 load_dotenv()
@@ -13,32 +22,30 @@ LOCATION = "us-central1"
 
 # Initialize the Vertex AI SDK
 vertexai.init(project=PROJECT_ID, location=LOCATION)
-# Initialize the Translation client
+# Initialize the Translation client (v2)
 translate_client = translate.Client()
 
-# --- Updated Translation Function for v3 ---
+# --- Translation Function ---
 def translate_text(text: str, target_language: str) -> str:
-    """Translates text into the target language using v3 client."""
-    if not text:
-        return ""
+    """Translates text into the target language using v2 client."""
+    if not text or target_language == "en":
+        return text
     
-    parent = f"projects/{PROJECT_ID}/locations/global"
-    
-    response = translate_client.translate_text(
-        parent=parent,
-        contents=[text],
-        target_language_code=target_language,
-    )
-    # The v3 response is an object with a list of translations
-    return response.translations[0].translated_text
+    try:
+        # Use v2 API syntax
+        result = translate_client.translate(text, target_language=target_language)
+        return result["translatedText"]
+    except Exception as e:
+        print(f"Translation error: {e}")
+        return text  # Return original text if translation fails
 
-# --- Updated AI Generation Functions ---
+# --- AI Generation Functions ---
 def generate_product_description(product_input: str, target_language: str = "en"):
     """
     Generates a marketing-focused product description in the target language.
     """
     # Step 1: Translate the user's input to English for the best AI performance
-    input_in_english = translate_text(product_input, "en")
+    input_in_english = translate_text(product_input, "en") if target_language != "en" else product_input
 
     # Load the Gemini 2.0 Flash model (updated model name)
     model = GenerativeModel("gemini-2.0-flash")
@@ -75,7 +82,7 @@ def generate_social_media_post(product_input: str, target_language: str = "en"):
     Generates 3 engaging Instagram post ideas in the target language.
     """
     # Step 1: Translate input to English
-    input_in_english = translate_text(product_input, "en")
+    input_in_english = translate_text(product_input, "en") if target_language != "en" else product_input
 
     model = GenerativeModel("gemini-2.0-flash")
 

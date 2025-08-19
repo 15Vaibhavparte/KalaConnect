@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 import vertexai
 from vertexai.generative_models import GenerativeModel
+# Load environment variables from .env file
+load_dotenv()
 # Set credentials from .env file
 credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 if credentials_path:
@@ -103,7 +105,8 @@ def generate_social_media_post(product_input: str, target_language: str = "en"):
         # Step 3: Translate the English output back to the target language
         if target_language != "en":
             translated_posts = translate_text(english_posts, target_language)
-            return translated_posts
+            reformatted_posts = reformat_translated_posts(translated_posts)
+            return reformatted_posts
         else:
             return english_posts
             
@@ -119,3 +122,38 @@ if __name__ == '__main__':
     print(generate_product_description(test_input))
     print("\n--- Generated Social Media Posts ---")
     print(generate_social_media_post(test_input))
+
+def reformat_translated_posts(text: str) -> str:
+    """
+    Takes a translated block of text and re-applies markdown formatting.
+    """
+    # Split the text into individual post ideas
+    # Assuming the translator keeps "Post Idea" or a similar phrase
+    # We use a common Hindi translation for "Post Idea" as a splitter
+    posts = text.split('पोस्ट आइडिया')
+    if len(posts) < 2: # If splitting didn't work, try the English phrase
+        posts = text.split('Post Idea')
+
+    formatted_posts = []
+    for post in posts:
+        if post.strip() == "":
+            continue
+        
+        lines = post.strip().split('\n')
+        
+        # Make the title (Post Idea X) bold
+        lines[0] = f"**Post Idea{lines[0]}**"
+        
+        # Reformat the rest of the lines
+        reformatted_lines = [lines[0]]
+        for line in lines[1:]:
+            # Make keywords like 'Caption' and 'Hashtags' bold
+            if ":" in line:
+                parts = line.split(":", 1)
+                line = f"**{parts[0].strip()}:**{parts[1]}"
+            reformatted_lines.append(line)
+        
+        formatted_posts.append("\n".join(reformatted_lines))
+        
+    # Join the formatted posts with a double newline for spacing
+    return "\n\n---\n\n".join(formatted_posts)

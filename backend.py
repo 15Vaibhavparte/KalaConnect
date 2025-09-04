@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 import vertexai
-from vertexai.generative_models import GenerativeModel
+from vertexai.generative_models import GenerativeModel, Part
 from vertexai.preview.vision_models import ImageGenerationModel
 
 # Load environment variables FIRST
@@ -14,48 +14,7 @@ LOCATION = "us-central1"
 # Initialize the Vertex AI SDK
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
-# --- Internal Helper Functions for Content Generation ---
-
-def _generate_product_description(product_input: str):
-    """Generates a marketing-focused product description."""
-    model = GenerativeModel("gemini-2.5-flash")
-
-    prompt = f"""
-    You are a marketing expert specializing in helping local Indian artisans.
-    Your tone is warm, evocative, and appreciative of traditional craftsmanship.
-    An artisan has provided the following details about their product.
-    Artisan's input: "{product_input}"
-
-    Based on this, write a compelling and beautiful product description (around 100-150 words)
-    that they can use on an e-commerce website.
-    """
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        print(f"Description generation failed: {e}")
-        return "Sorry, I'm having a little trouble writing the description right now."
-
-def _generate_social_media_post(product_input: str):
-    """Generates 3 engaging Instagram post ideas."""
-    model = GenerativeModel("gemini-2.5-flash")
-
-    prompt = f"""
-    You are a creative social media manager for Indian handicraft brands.
-    Your goal is to create engaging, short-form content for Instagram.
-    An artisan has provided the following details about their product: "{product_input}"
-
-    Based on this, generate 3 distinct Instagram post ideas.
-    Each post idea must include a caption and relevant hashtags.
-    Format the output clearly using markdown.
-    """
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        print(f"Social media post generation failed: {e}")
-        return "Sorry, I'm having a little trouble brainstorming social media posts right now."
-
+# --- Internal Helper Function for Image Generation ---
 def _generate_product_image(product_input: str):
     """Generates a product image based on the input description."""
     try:
@@ -74,17 +33,87 @@ def _generate_product_image(product_input: str):
         print(f"Image generation failed: {e}")
         return None
 
-# --- Main Orchestration Function ---
-def generate_all_content(product_input: str):
+# --- Main Orchestration Function (Now with two-step prompting for better image accuracy) ---
+def generate_all_content(product_input: str, image_data=None):
     """
-    Generates product description, social media posts, and an image simultaneously.
+    Generates all content based on text and/or an uploaded image using two-step prompting for better accuracy.
     """
-    # --- Generate all content ---
-    description = _generate_product_description(product_input)
-    social_posts = _generate_social_media_post(product_input)
-    generated_image_bytes = _generate_product_image(product_input)
+    text_model = GenerativeModel("gemini-2.5-flash")
+    
+    # --- Step 1: Analyze the Input (Text or Image) ---
+    if image_data:
+        image_part = Part.from_data(data=image_data, mime_type="image/jpeg")
+        
+        # First, we ask Gemini to create a very detailed description of the uploaded image.
+        detailed_desc_prompt = [
+            "You are a meticulous product photographer's assistant. "
+            "Describe the following image of a handcrafted product in extreme detail. "
+            "Mention the exact type of product, "
+            "the precise colors, the style of any patterns or designs, the material texture, "
+            "and the overall aesthetic. Be very specific.",
+            image_part
+        ]
+        response = text_model.generate_content(detailed_desc_prompt)
+        detailed_description_from_image = response.text.strip()
+        
+        # Use this as the base for generating content
+        base_content = detailed_description_from_image
+    else:
+        # Use the user's text input as the source
+        base_content = product_input
 
-    # --- Return all results together in a dictionary ---
+    # --- Step 2: Generate Product Description (Separate Call) ---
+    desc_prompt = f"""
+    You are a marketing expert for handcrafted Indian products. 
+    Based on this product: "{base_content}"
+    
+    Write a compelling and beautiful product description (around 100-150 words) for an e-commerce website.
+    Make it warm, evocative, and appreciative of traditional craftsmanship.
+    Do not include any introductory text or task labels - just provide the pure product description.
+    """
+    
+    description_response = text_model.generate_content([desc_prompt])
+    description = description_response.text.strip()
+
+    # --- Step 3: Generate Social Media Posts (Separate Call) ---
+    social_prompt = f"""
+    You are a social media manager for Indian handicraft brands.
+    Based on this product: "{base_content}"
+    
+    Generate 3 Instagram post ideas. Format your response EXACTLY like this with proper line breaks:
+
+## Instagram Post Idea 1: [Creative Title]
+
+**Caption:** [Write an engaging caption here]
+
+**Hashtags:** [List relevant hashtags]
+
+---
+
+## Instagram Post Idea 2: [Creative Title]
+
+**Caption:** [Write an engaging caption here]
+
+**Hashtags:** [List relevant hashtags]
+
+---
+
+## Instagram Post Idea 3: [Creative Title]
+
+**Caption:** [Write an engaging caption here]
+
+**Hashtags:** [List relevant hashtags]
+
+Do not include any introductory text or task labels - start directly with the first post idea.
+    """
+    
+    social_response = text_model.generate_content([social_prompt])
+    social_posts = social_response.text.strip()
+
+    # --- Step 4: Generate an Image from Imagen (using the detailed description) ---
+    generated_image_bytes = _generate_product_image(base_content)
+
+    # --- Step 5: Return all results ---
     return {
         "description": description,
         "social_posts": social_posts,

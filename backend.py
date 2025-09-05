@@ -15,19 +15,15 @@ LOCATION = "us-central1"
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 # --- Internal Helper Function for Image Generation ---
-def _generate_product_image(product_input: str):
-    """Generates a product image based on the input description."""
+def _generate_product_image(full_image_prompt: str):
+    """
+    Generates a product image based on a full, detailed prompt.
+    """
     try:
         model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002") 
         
-        image_prompt = f"""
-        A hyper-realistic, professional product photograph of: {product_input}.
-        The product should be the central focus, displayed on a clean, neutral background.
-        The lighting should be soft and natural, highlighting the product's textures and details.
-        8k resolution, photorealistic, cinematic lighting.
-        """
-        
-        response = model.generate_images(prompt=image_prompt, number_of_images=1)
+        # We now pass the entire, pre-engineered prompt to this function
+        response = model.generate_images(prompt=full_image_prompt, number_of_images=1)
         return response[0]._image_bytes
     except Exception as e:
         print(f"Image generation failed: {e}")
@@ -110,10 +106,50 @@ Do not include any introductory text or task labels - start directly with the fi
     social_response = text_model.generate_content([social_prompt])
     social_posts = social_response.text.strip()
 
-    # --- Step 4: Generate an Image from Imagen (using the detailed description) ---
-    generated_image_bytes = _generate_product_image(base_content)
+    # --- Step 4: NEW - Identify Product Category for Scene-Aware Background ---
+    category_prompt = f"""
+    Based on the following product description, what is the single best category for this item?
+    Also specify if it's a fabric pattern/swatch, small textile item, or full garment.
+    Choose from: Pottery, Jewelry, Textile-Pattern, Textile-Small, Textile-Garment, Painting, Woodcraft, Metalwork, Other.
+    Description: "{base_content}"
+    
+    Respond with just the category name.
+    """
+    category_response = text_model.generate_content([category_prompt])
+    product_category = category_response.text.strip().lower()
 
-    # --- Step 5: Return all results ---
+    # --- Step 5: NEW - Select an Artistic Background Scene ---
+    # Based on the category, we choose a beautiful, relevant setting.
+    background_scene = "in a beautifully styled lifestyle setting that complements its colors and textures"  # Default
+    
+    if "pottery" in product_category:
+        background_scene = "on a rustic wooden table, next to a window with soft, diffused morning light streaming in. A few dried flowers are artfully placed nearby"
+    elif "jewelry" in product_category:
+        background_scene = "delicately displayed on a natural piece of slate or dark marble, with a soft, out-of-focus background"
+    elif "textile-pattern" in product_category or "textile-small" in product_category:
+        background_scene = "professionally styled on a dress form mannequin in a bright, modern photography studio with clean white backdrop and professional lighting"
+    elif "textile-garment" in product_category:  # Full garments like sarees, dresses
+        background_scene = "beautifully styled on an elegant fashion mannequin in a sophisticated photography studio with soft, professional lighting and a clean, minimalist background"
+    elif "painting" in product_category:
+        background_scene = "hanging on a tastefully decorated, neutral-colored wall in a modern, minimalist living room, with a soft spotlight highlighting its details"
+    elif "woodcraft" in product_category:
+        background_scene = "placed on a clean, light-colored surface, with soft shadows and a hint of green foliage in the background"
+    elif "metalwork" in product_category:
+        background_scene = "artfully arranged on a textured stone surface with warm, golden lighting that highlights the metal's finish"
+
+    # --- Step 6: Construct the Final, Artistic Image Prompt ---
+    final_image_prompt = f"""
+    A hyper-realistic, artistic lifestyle photograph of: {base_content}.
+    The product is featured {background_scene}.
+    The image should have a shallow depth of field, making the product the sharp focus.
+    The mood is warm, serene, and authentic.
+    Photographed with a professional DSLR camera, cinematic quality, 8k resolution.
+    """
+
+    # --- Step 7: Generate Image and Return Results ---
+    generated_image_bytes = _generate_product_image(final_image_prompt)
+
+    # --- Step 8: Return all results ---
     return {
         "description": description,
         "social_posts": social_posts,

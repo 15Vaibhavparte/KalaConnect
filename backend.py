@@ -30,9 +30,18 @@ def _generate_product_image(full_image_prompt: str):
         return None
 
 # --- Main Orchestration Function (Now with two-step prompting for better image accuracy) ---
-def generate_all_content(product_input: str, image_data=None):
+def generate_all_content(product_input: str, image_data=None, image_style="Artistic Lifestyle", 
+                        regenerate_image_only=False, regenerate_desc_only=False, regenerate_posts_only=False):
     """
     Generates all content based on text and/or an uploaded image using two-step prompting for better accuracy.
+    
+    Args:
+        product_input: Text description of the product
+        image_data: Binary image data if an image was uploaded
+        image_style: "Artistic Lifestyle" or "Clean Studio Background"
+        regenerate_image_only: If True, only regenerate the image
+        regenerate_desc_only: If True, only regenerate the product description
+        regenerate_posts_only: If True, only regenerate the social media posts
     """
     text_model = GenerativeModel("gemini-2.5-flash")
     
@@ -59,24 +68,29 @@ def generate_all_content(product_input: str, image_data=None):
         base_content = product_input
 
     # --- Step 2: Generate Product Description (Separate Call) ---
-    desc_prompt = f"""
-    You are a marketing expert for handcrafted Indian products. 
-    Based on this product: "{base_content}"
-    
-    Write a compelling and beautiful product description (around 100-150 words) for an e-commerce website.
-    Make it warm, evocative, and appreciative of traditional craftsmanship.
-    Do not include any introductory text or task labels - just provide the pure product description.
-    """
-    
-    description_response = text_model.generate_content([desc_prompt])
-    description = description_response.text.strip()
+    if not regenerate_image_only and not regenerate_posts_only:
+        desc_prompt = f"""
+        You are a marketing expert for handcrafted Indian products. 
+        Based on this product: "{base_content}"
+        
+        Write a compelling and beautiful product description (around 100-150 words) for an e-commerce website.
+        Make it warm, evocative, and appreciative of traditional craftsmanship.
+        Do not include any introductory text or task labels - just provide the pure product description.
+        """
+        
+        description_response = text_model.generate_content([desc_prompt])
+        description = description_response.text.strip()
+    else:
+        # Skip generating description if only regenerating image or posts
+        description = "Not regenerated"
 
     # --- Step 3: Generate Social Media Posts (Separate Call) ---
-    social_prompt = f"""
-    You are a social media manager for Indian handicraft brands.
-    Based on this product: "{base_content}"
-    
-    Generate 3 Instagram post ideas. Format your response EXACTLY like this with proper line breaks:
+    if not regenerate_image_only and not regenerate_desc_only:
+        social_prompt = f"""
+        You are a social media manager for Indian handicraft brands.
+        Based on this product: "{base_content}"
+        
+        Generate 3 Instagram post ideas. Format your response EXACTLY like this with proper line breaks:
 
 ## Instagram Post Idea 1: [Creative Title]
 
@@ -101,10 +115,13 @@ def generate_all_content(product_input: str, image_data=None):
 **Hashtags:** [List relevant hashtags]
 
 Do not include any introductory text or task labels - start directly with the first post idea.
-    """
-    
-    social_response = text_model.generate_content([social_prompt])
-    social_posts = social_response.text.strip()
+        """
+        
+        social_response = text_model.generate_content([social_prompt])
+        social_posts = social_response.text.strip()
+    else:
+        # Skip generating social posts if only regenerating image or description
+        social_posts = "Not regenerated"
 
     # --- Step 4: NEW - Identify Product Category for Scene-Aware Background ---
     category_prompt = f"""
@@ -137,17 +154,30 @@ Do not include any introductory text or task labels - start directly with the fi
     elif "metalwork" in product_category:
         background_scene = "artfully arranged on a textured stone surface with warm, golden lighting that highlights the metal's finish"
 
-    # --- Step 6: Construct the Final, Artistic Image Prompt ---
-    final_image_prompt = f"""
-    A hyper-realistic, artistic lifestyle photograph of: {base_content}.
-    The product is featured {background_scene}.
-    The image should have a shallow depth of field, making the product the sharp focus.
-    The mood is warm, serene, and authentic.
-    Photographed with a professional DSLR camera, cinematic quality, 8k resolution.
-    """
+    # --- Step 6: Construct the Final Image Prompt Based on Selected Style ---
+    if image_style == "Artistic Lifestyle":
+        final_image_prompt = f"""
+        A hyper-realistic, artistic lifestyle photograph of: {base_content}.
+        The product is featured {background_scene}.
+        The image should have a shallow depth of field, making the product the sharp focus.
+        The mood is warm, serene, and authentic.
+        Photographed with a professional DSLR camera, cinematic quality, 8k resolution.
+        """
+    else:  # Clean Studio Background
+        final_image_prompt = f"""
+        A clean, professional product photography of: {base_content}.
+        The product is centered on a simple white or light gray background with subtle shadows.
+        The lighting is bright, even, and highlights all details and textures of the product.
+        The image has perfect focus and clarity, showing the craftsmanship in crisp detail.
+        Commercial product photography style, perfect for e-commerce, 8k resolution.
+        """
 
-    # --- Step 7: Generate Image and Return Results ---
-    generated_image_bytes = _generate_product_image(final_image_prompt)
+    # --- Step 7: Generate Image (Unless skipping for regenerate options) ---
+    if not regenerate_desc_only and not regenerate_posts_only:
+        generated_image_bytes = _generate_product_image(final_image_prompt)
+    else:
+        # Skip generating image if only regenerating description or posts
+        generated_image_bytes = None
 
     # --- Step 8: Return all results ---
     return {

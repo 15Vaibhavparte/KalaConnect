@@ -1,18 +1,31 @@
 import os
+import json
 from dotenv import load_dotenv
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
 from vertexai.preview.vision_models import ImageGenerationModel
-
-# Load environment variables FIRST
-load_dotenv()
+import streamlit as st
 
 # --- GCP Project Configuration ---
 PROJECT_ID = "kalaconnect-hackathon"
 LOCATION = "us-central1"
 
-# Initialize the Vertex AI SDK
-vertexai.init(project=PROJECT_ID, location=LOCATION)
+# Load environment variables for local development
+load_dotenv()
+
+# Initialize Vertex AI SDK - Handle both local development and Streamlit Cloud deployment
+try:
+    # Check if running on Streamlit Cloud by looking for secrets
+    if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+        # Get service account info from Streamlit secrets
+        credentials = st.secrets["gcp_service_account"]
+        vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
+    else:
+        # Local development with GOOGLE_APPLICATION_CREDENTIALS environment variable
+        vertexai.init(project=PROJECT_ID, location=LOCATION)
+except Exception as e:
+    st.error(f"Failed to initialize Vertex AI: {e}")
+    print(f"Error initializing Vertex AI: {e}")
 
 # --- Internal Helper Function for Image Generation ---
 def _generate_product_image(full_image_prompt: str):

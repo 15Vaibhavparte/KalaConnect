@@ -75,7 +75,7 @@ client_x509_cert_url = "placeholder"
 
 ```toml
 # Add your real API key
-GOOGLE_API_KEY = "AIzaSyCNhzjwTJEJoDytubfmXIpozWJ3qFz7U2w"
+GOOGLE_API_KEY = "Paste your API key here"
 
 # Copy and paste the ENTIRE contents of your service account JSON file
 [gcp_service_account]

@@ -21,7 +21,7 @@ if 'regenerated_social_posts' not in st.session_state:
 
 # --- Header Section ---
 st.title("🎨 KalaConnect - The Artisan's Digital Storyteller")
-st.image("img/artisan.png", caption="Empowering India's Artisans with the Power of AI", use_container_width=True)
+st.image("img/artisan.png", caption="Empowering India's Artisans with the Power of AI", use_column_width=True)
 
 # --- Sidebar Configuration ---
 st.sidebar.info("This app is a prototype for the Google Cloud Gen AI Exchange Hackathon 2025.")
@@ -104,7 +104,7 @@ if 'results' in locals():
     with res_col1:
         st.subheader("📸 AI-Generated Image")
         if results["image"]:
-            st.image(results["image"], caption="Generated Product Image", use_container_width=True)
+            st.image(results["image"], caption="Generated Product Image", use_column_width=True)
             # Download image button - now outside the form
             image_bytes = results["image"]
             st.download_button(

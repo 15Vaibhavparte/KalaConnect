@@ -1,13 +1,15 @@
 import streamlit as st
-from backend import generate_all_content
 import io
 
-# --- Page Configuration ---
+# --- Page Configuration (MUST be first) ---
 st.set_page_config(
     page_title="KalaConnect AI Assistant",
     page_icon="🎨",
     layout="wide"
 )
+
+# Import after page config to avoid conflicts
+from backend import generate_all_content, translate_content
 
 # Initialize session state for storing regenerated content
 if 'regenerated_image' not in st.session_state:
@@ -19,10 +21,26 @@ if 'regenerated_social_posts' not in st.session_state:
 
 # --- Header Section ---
 st.title("🎨 KalaConnect - The Artisan's Digital Storyteller")
-st.image("img/artisan.png", caption="Empowering India's Artisans with the Power of AI", use_column_width=True)
+st.image("img/artisan.png", caption="Empowering India's Artisans with the Power of AI", use_container_width=True)
 
-# --- Sidebar Info ---
+# --- Sidebar Configuration ---
 st.sidebar.info("This app is a prototype for the Google Cloud Gen AI Exchange Hackathon 2025.")
+
+# Language Selection Sidebar
+st.sidebar.markdown("---")
+st.sidebar.header("🌐 Language Settings")
+selected_language = st.sidebar.selectbox(
+    "Choose your preferred language:",
+    options=["English", "Hindi", "Bengali", "Tamil", "Kannada", "Urdu"],
+    index=0,
+    help="Select the language for generated content translation"
+)
+
+# Display selected language info
+if selected_language != "English":
+    st.sidebar.success(f"📝 Content will be translated to **{selected_language}**")
+else:
+    st.sidebar.info("📝 Content will be generated in **English**")
 
 st.write("---")
 
@@ -63,10 +81,18 @@ if submitted:
         with st.spinner("Generating a full marketing kit... This may take a moment."):
             # Pass both the text and image data to the backend, along with the selected image style
             results = generate_all_content(product_input, image_data, image_style=image_style)
+            
+            # Translate content if a non-English language is selected
+            if selected_language != "English":
+                with st.spinner(f"Translating content to {selected_language}..."):
+                    results = translate_content(results, selected_language)
                 
             # --- Display Results ---
             st.write("---")
-            st.header("Your AI-Generated Marketing Kit")
+            if selected_language != "English":
+                st.header(f"Your AI-Generated Marketing Kit (in {selected_language})")
+            else:
+                st.header("Your AI-Generated Marketing Kit")
     else:
         # Error if neither input is provided
         st.error("Please describe your product OR upload an image to begin.")
@@ -78,7 +104,7 @@ if 'results' in locals():
     with res_col1:
         st.subheader("📸 AI-Generated Image")
         if results["image"]:
-            st.image(results["image"], caption="Your AI-generated product image.")
+            st.image(results["image"], caption="Generated Product Image", use_container_width=True)
             # Download image button - now outside the form
             image_bytes = results["image"]
             st.download_button(
@@ -122,6 +148,12 @@ if 'results' in locals():
             if desc_buttons.button("🎲 Regenerate Description", key="regen_desc"):
                 with st.spinner("Regenerating description..."):
                     new_results = generate_all_content(product_input, image_data, image_style=image_style, regenerate_desc_only=True)
+                    
+                    # Translate if non-English language is selected
+                    if selected_language != "English":
+                        with st.spinner(f"Translating to {selected_language}..."):
+                            new_results = translate_content(new_results, selected_language)
+                    
                     if "description" in new_results and new_results["description"] != "Not regenerated":
                         # Store the regenerated description in the session state
                         st.session_state.regenerated_description = new_results["description"]
@@ -152,6 +184,12 @@ if 'results' in locals():
             if social_buttons.button("🎲 Regenerate Social Posts", key="regen_posts"):
                 with st.spinner("Regenerating social media posts..."):
                     new_results = generate_all_content(product_input, image_data, image_style=image_style, regenerate_posts_only=True)
+                    
+                    # Translate if non-English language is selected
+                    if selected_language != "English":
+                        with st.spinner(f"Translating to {selected_language}..."):
+                            new_results = translate_content(new_results, selected_language)
+                    
                     if "social_posts" in new_results and new_results["social_posts"] != "Not regenerated":
                         # Store the regenerated social posts in the session state
                         st.session_state.regenerated_social_posts = new_results["social_posts"]

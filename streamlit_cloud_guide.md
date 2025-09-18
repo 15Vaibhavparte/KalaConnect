@@ -16,12 +16,21 @@ This guide walks you through deploying your KalaConnect app to Streamlit Cloud, 
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Navigate to your project: `kalaconnect-hackathon`
-3. Go to **IAM & Admin** > **Service Accounts**
-4. Click **Create Service Account**
-5. Name it `streamlit-deploy` (or any name you prefer)
-6. Grant necessary roles (Vertex AI User, Storage Object Viewer)
-7. Click **Create and Continue**
-8. Click **Done**
+3. **Enable Required APIs:**
+   - Go to **APIs & Services** > **Library**
+   - Search for and enable:
+     - Vertex AI API
+     - Cloud Translate API
+     - Cloud Storage API (if not already enabled)
+4. Go to **IAM & Admin** > **Service Accounts**
+5. Click **Create Service Account**
+6. Name it `streamlit-deploy` (or any name you prefer)
+7. Grant necessary roles:
+   - **Vertex AI User** (for AI content generation)
+   - **Cloud Translate API User** (for translation features)
+   - **Storage Object Viewer** (if using cloud storage)
+8. Click **Create and Continue**
+9. Click **Done**
 
 ### 2️⃣ Generate a Key for Your Service Account
 

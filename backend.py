@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import streamlit as st
 import google.auth
 from google.oauth2 import service_account
+from google.cloud import translate
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
 from vertexai.preview.vision_models import ImageGenerationModel
@@ -12,13 +13,23 @@ from vertexai.preview.vision_models import ImageGenerationModel
 PROJECT_ID = "kalaconnect-hackathon"
 LOCATION = "us-central1"
 
+# Language code mapping for supported languages
+LANGUAGE_CODES = {
+    "English": "en",
+    "Hindi": "hi", 
+    "Bengali": "bn",
+    "Tamil": "ta",
+    "Kannada": "kn",
+    "Urdu": "ur"
+}
+
 # Load environment variables for local development
 load_dotenv()
 
 # Initialize Vertex AI SDK - Handle both local development and Streamlit Cloud deployment
 try:
-    # Check if running on Streamlit Cloud by looking for secrets
-    if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+    # Check if running on Streamlit Cloud by looking for secrets (more specific check)
+    if hasattr(st, "secrets") and hasattr(st.secrets, "gcp_service_account"):
         # Get service account info from Streamlit secrets
         credentials_info = st.secrets["gcp_service_account"]
         
@@ -41,6 +52,129 @@ except Exception as e:
     if 'st' in globals():
         st.error(error_msg)
         st.error("Please check your Google Cloud credentials and permissions.")
+
+# --- Translation Functions ---
+def initialize_translate_client():
+    """
+    Initialize Google Cloud Translate client (v3 API)
+    """
+    try:
+        # Check if running on Streamlit Cloud by looking for secrets (more specific check)
+        if hasattr(st, "secrets") and hasattr(st.secrets, "gcp_service_account"):
+            # Get service account info from Streamlit secrets
+            credentials_info = st.secrets["gcp_service_account"]
+            
+            # Create credentials object from the dictionary
+            credentials = service_account.Credentials.from_service_account_info(
+                credentials_info,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            )
+            
+            # Initialize translate client with explicit credentials (v3 API)
+            translate_client = translate.TranslationServiceClient(credentials=credentials)
+            print("Initialized Translate client with Streamlit Cloud credentials")
+            return translate_client
+        else:
+            # Local development with GOOGLE_APPLICATION_CREDENTIALS environment variable
+            translate_client = translate.TranslationServiceClient()
+            print("Initialized Translate client with local credentials")
+            return translate_client
+    except Exception as e:
+        error_msg = f"Failed to initialize Translate client: {str(e)}"
+        print(error_msg)
+        if 'st' in globals():
+            st.error(error_msg)
+        return None
+
+def translate_text(text: str, target_language: str) -> str:
+    """
+    Translate text to the target language using Google Translate API v3
+    
+    Args:
+        text: Text to translate
+        target_language: Target language name (e.g., "Hindi", "Bengali")
+    
+    Returns:
+        Translated text or original text if translation fails
+    """
+    if target_language == "English":
+        return text
+    
+    try:
+        # Get the language code
+        target_code = LANGUAGE_CODES.get(target_language, "en")
+        
+        # Initialize translate client
+        translate_client = initialize_translate_client()
+        if not translate_client:
+            return text
+        
+        # Prepare the request for v3 API
+        parent = f"projects/{PROJECT_ID}/locations/global"
+        
+        # Perform translation using v3 API
+        response = translate_client.translate_text(
+            request={
+                "parent": parent,
+                "contents": [text],
+                "mime_type": "text/plain",
+                "source_language_code": "en",
+                "target_language_code": target_code,
+            }
+        )
+        
+        # Extract the translated text
+        if response.translations:
+            return response.translations[0].translated_text
+        else:
+            return text
+    
+    except Exception as e:
+        error_msg = f"Translation failed: {str(e)}"
+        print(error_msg)
+        if 'st' in globals():
+            st.warning(f"Translation to {target_language} failed. Showing original text.")
+        return text
+
+def translate_content(content_dict: dict, target_language: str) -> dict:
+    """
+    Translate all content in the dictionary to the target language
+    
+    Args:
+        content_dict: Dictionary containing 'description', 'social_posts', and 'image'
+        target_language: Target language name
+    
+    Returns:
+        Dictionary with translated content
+    """
+    if target_language == "English":
+        return content_dict
+    
+    translated_content = content_dict.copy()
+    
+    try:
+        # Translate product description
+        if content_dict.get("description") and content_dict["description"] != "Not regenerated":
+            if not content_dict["description"].startswith("Error:"):
+                translated_content["description"] = translate_text(content_dict["description"], target_language)
+        
+        # Translate social media posts
+        if content_dict.get("social_posts") and content_dict["social_posts"] != "Not regenerated":
+            if not content_dict["social_posts"].startswith("Error:"):
+                translated_content["social_posts"] = translate_text(content_dict["social_posts"], target_language)
+        
+        # Image remains the same (no translation needed)
+        translated_content["image"] = content_dict.get("image")
+        
+    except Exception as e:
+        error_msg = f"Content translation failed: {str(e)}"
+        print(error_msg)
+        if 'st' in globals():
+            st.warning(f"Some content could not be translated to {target_language}.")
+        # Return original content if translation fails
+        return content_dict
+    
+    return translated_content
 
 # --- Internal Helper Function for Image Generation ---
 def _generate_product_image(full_image_prompt: str):

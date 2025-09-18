@@ -3,3 +3,4 @@ venv/
 __pycache__/
 kalaconnect-app-key.json
 .streamlit/
+secrets.toml

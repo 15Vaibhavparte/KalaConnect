@@ -21,7 +21,24 @@ if 'regenerated_social_posts' not in st.session_state:
 
 # --- Header Section ---
 st.title("🎨 KalaConnect - The Artisan's Digital Storyteller")
-st.image("img/artisan.png", caption="Empowering India's Artisans with the Power of AI", use_column_width=True)
+
+# Add this CSS to control banner height
+st.markdown("""
+<style>
+    .stImage > div > img {
+        height: 500px!important;
+        width: 100% !important;
+        object-fit: cover !important;  /* Maintains aspect ratio and crops if needed */
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Display banner with custom class
+st.markdown('<div class="banner-image">', unsafe_allow_html=True)
+st.image("img/artisan.png", 
+         caption="Empowering India's Artisans with the Power of AI", 
+         use_column_width=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Sidebar Configuration ---
 st.sidebar.info("This app is a prototype for the Google Cloud Gen AI Exchange Hackathon 2025.")

@@ -1,97 +1,93 @@
-🎨 KalaConnect - The Artisan's Digital Storyteller
-KalaConnect is an AI-powered web application designed to empower local Indian artisans by helping them with their digital marketing efforts. It provides easy-to-use tools to generate compelling product descriptions and engaging social media content, bridging the gap between traditional craftsmanship and the modern digital marketplace.
+# 🎨 KalaConnect - AI Marketing Assistant (Prototype)
 
-This project is a submission for the Google Cloud Gen AI Exchange Hackathon 2025 (Student Track).
+> **Note:** This is a prototype submission for evaluation purposes. Not intended for production use.
 
-Live Demo URL: [Insert Your Deployed Streamlit App URL Here]
+## 🚀 Live Prototype Demo
+**Try the prototype:** https://kalaconnect-4rjfnrzw3amnvmvwvinpxz.streamlit.app
 
-1. Introduction
-In the heart of India, millions of artisans create beautiful, handcrafted goods. However, they often face significant challenges in marketing their craft online, lacking the time, resources, or digital marketing expertise. KalaConnect was built to solve this problem. It acts as a personal marketing assistant, using the power of Google's Generative AI to craft beautiful stories and engaging content, allowing artisans to focus on what they do best: creating.
+## Project Overview
 
-2. Installation and Setup
-To run this project on your local machine, please follow these steps.
+KalaConnect is an AI-powered digital marketing assistant designed to help Indian artisans create professional marketing content. Using Google Cloud's Vertex AI and Translation APIs, it generates product descriptions, social media posts, and scene-aware product images while supporting multiple Indian languages.
 
-Prerequisites
-Python 3.11
+**Hackathon:** Google Cloud Gen AI Exchange Hackathon 2025 (Student Track)
 
-Git
+## Prototype Functionalities
 
-A Google Cloud Platform (GCP) project with the Vertex AI API enabled and billing set up.
+### ✅ Core Features
+- **Multimodal Content Generation**: Product descriptions and social media posts from text or image input
+- **AI Image Generation**: Scene-aware product photography with background removal
+- **Multi-language Support**: Translation to Hindi, Bengali, Tamil, Kannada, and Urdu
+- **Interactive UI**: Single-column layout with copy/download functionality
+- **Per-section Regeneration**: Individual content refresh without full reload
 
-Step-by-Step Guide
-Clone the Repository
-Open your terminal and clone this repository to your local machine:
+### ⚠️ Current Limitations
+- **Prototype Status**: Not production-ready, requires user review
+- **Image Processing**: Basic background removal, may need manual refinement  
+- **Translation Quality**: Automated translation may require human verification
+- **Performance**: Processing time varies with content complexity
+- **Error Handling**: Limited graceful degradation for API failures
 
-git clone https://github.com/YourUsername/KalaConnect.git
+## Quick Setup
+
+### Prerequisites
+- Python 3.11+
+- Google Cloud Project with Vertex AI and Translation APIs enabled
+- Service account with appropriate permissions
+
+### Installation
+```bash
+# Clone repository
+git clone https://github.com/15Vaibhavparte/KalaConnect.git
 cd KalaConnect
 
-Create and Activate a Python Virtual Environment
-It is highly recommended to use a virtual environment to manage project dependencies.
-
-# Create the environment
+# Setup environment
 python -m venv venv
-
-# Activate on Windows
-venv\Scripts\activate
-
-# Activate on macOS/Linux
-source venv/bin/activate
-
-Install Required Dependencies
-Install all the necessary libraries using the requirements.txt file.
-
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 
-Set Up Google Cloud Credentials
-This application uses Google's Application Default Credentials (ADC) for authentication.
+# Configure credentials (create service account and download JSON)
+# Update .streamlit/secrets.toml with your credentials
 
-Follow this Google Cloud ADC guide to set up your credentials locally.
-
-Ensure your PROJECT_ID in backend.py is set to your actual Google Cloud Project ID.
-
-3. Usage
-Once the setup is complete, you can run the application with a single command.
-
-Run the Streamlit App
-In your terminal (with the virtual environment activated), run the following command from the project's root directory:
-
+# Run application
 streamlit run app.py
+```
 
-Using the Application
+### Usage
+1. Upload product image or provide text description
+2. Select language preference from sidebar
+3. Choose image style (Artistic/Studio)
+4. Generate content using form submission
+5. Copy or download generated marketing materials
 
-Your web browser will automatically open to the application's UI.
+## Known Issues & Future Development
 
-Navigate between the "Product Description Generator" and "Social Media Post Generator" tabs.
+### Known Issues
+- **Streamlit Version**: Compatibility issues with different Streamlit versions
+- **API Quotas**: May hit rate limits during extensive testing
+- **Image Upload**: Large images may cause timeout errors
+- **Translation API**: Requires proper IAM role assignment
 
-In the appropriate tab, enter a simple description of your product in the text area.
+### Planned Improvements
+- Enhanced error handling and user feedback
+- Advanced image editing capabilities
+- Batch processing for multiple products
+- Performance optimization and caching
+- Production-ready deployment configuration
 
-Click the "Generate" button and wait for the AI to craft your content.
+## Technical Architecture
 
-4. Features and Functionality
-Key Features
-AI Product Description Generator: Takes a basic user input and transforms it into a warm, evocative, and marketing-focused product description suitable for e-commerce sites like Etsy or a personal website.
+- **Frontend**: Streamlit web application
+- **AI Models**: Vertex AI Gemini (text), Imagen (images)  
+- **Translation**: Google Cloud Translate API v3
+- **Image Processing**: Pillow, rembg for background removal
+- **Authentication**: Service account-based Google Cloud credentials
 
-AI Social Media Post Generator: Generates three distinct and creative Instagram post ideas based on a product description. Each idea includes an engaging caption and a list of relevant, high-traffic hashtags to maximize reach.
+## Acknowledgments
 
-Simple & Intuitive UI: The application is built with Streamlit for a clean, user-friendly, and responsive interface that is accessible even to users with limited technical skills.
+- **Google Cloud Platform**: Vertex AI and Translation APIs
+- **Streamlit**: Web application framework  
+- **Open Source Libraries**: Pillow, rembg, google-cloud-aiplatform
+- **Google Cloud Gen AI Exchange Hackathon 2025** for the opportunity
 
-Limitations
-This is a prototype. The AI's output, while generally high-quality, should be reviewed and edited by the user before publishing.
-
-The application currently relies on a single Generative AI model (Gemini -2.0-Flash ) and does not yet incorporate multimodal features (image inputs).
-
-5. Troubleshooting
-If you encounter issues while running the app, here are a few common solutions:
-
-ModuleNotFoundError: This usually means dependencies are not installed correctly. Ensure your virtual environment is active and you have run pip install -r requirements.txt.
-
-Authentication Errors (e.g., PermissionDenied): This indicates a problem with your Google Cloud credentials. Re-run the ADC setup steps and ensure the Vertex AI API is enabled for your project.
-
-Billing Disabled Error: The Vertex AI API requires billing to be enabled on your Google Cloud project. Please follow the link in the error message to enable it. (Note: You will likely not be charged due to Google Cloud's generous free tier and free trial credits).
-
-Credits & Acknowledgements
-Framework: Streamlit
-
-AI Model: Google's Gemini on Vertex AI
-
-Banner Image: [Pexels / Unsplash] 
+---
+**Disclaimer**: This prototype demonstrates AI-powered marketing content generation. All generated content should be reviewed before commercial use. 

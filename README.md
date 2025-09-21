@@ -15,14 +15,14 @@ KalaConnect is an AI-powered digital marketing assistant designed to help Indian
 
 ### ✅ Core Features
 - **Multimodal Content Generation**: Product descriptions and social media posts from text or image input
-- **AI Image Generation**: Scene-aware product photography with background removal
+- **AI Image Generation**: Scene-aware product photography
 - **Multi-language Support**: Translation to Hindi, Bengali, Tamil, Kannada, and Urdu
 - **Interactive UI**: Single-column layout with copy/download functionality
 - **Per-section Regeneration**: Individual content refresh without full reload
 
 ### ⚠️ Current Limitations
 - **Prototype Status**: Not production-ready, requires user review
-- **Image Processing**: Basic background removal, may need manual refinement  
+- **Image Processing**: may need manual refinement  
 - **Translation Quality**: Automated translation may require human verification
 - **Performance**: Processing time varies with content complexity
 - **Error Handling**: Limited graceful degradation for API failures
@@ -42,11 +42,19 @@ cd KalaConnect
 
 # Setup environment
 python -m venv venv
-venv\Scripts\activate  # Windows
+
+# Activate environment
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
+
 pip install -r requirements.txt
 
 # Configure credentials (create service account and download JSON)
 # Update .streamlit/secrets.toml with your credentials
+# Add .streamlit/secrets.toml in .gitignore file
+
 
 # Run application
 streamlit run app.py
@@ -79,14 +87,14 @@ streamlit run app.py
 - **Frontend**: Streamlit web application
 - **AI Models**: Vertex AI Gemini (text), Imagen (images)  
 - **Translation**: Google Cloud Translate API v3
-- **Image Processing**: Pillow, rembg for background removal
+- **Image Processing**: Pillow
 - **Authentication**: Service account-based Google Cloud credentials
 
 ## Acknowledgments
 
 - **Google Cloud Platform**: Vertex AI and Translation APIs
 - **Streamlit**: Web application framework  
-- **Open Source Libraries**: Pillow, rembg, google-cloud-aiplatform
+- **Open Source Libraries**: Pillow, google-cloud-aiplatform
 - **Google Cloud Gen AI Exchange Hackathon 2025** for the opportunity
 
 ---
